@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>MindFlow - マインドマップ | selfup.net</title>
-  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -23,8 +22,6 @@
   <!-- ヘッダー -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs flex-none">
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-      
-      <!-- ロゴ & Apps Hub戻りリンク -->
       <div class="flex items-center gap-3">
         <a href="../" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition">
           <i class="fa-solid fa-arrow-left"></i>
@@ -41,56 +38,53 @@
         </span>
       </div>
 
-      <!-- アクションボタン群 -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button onclick="undo()" id="btnUndo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="元に戻す (Ctrl+Z)">
+        <button id="btnUndo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="元に戻す (Ctrl+Z)">
           <i class="fa-solid fa-rotate-left"></i>
         </button>
-        <button onclick="redo()" id="btnRedo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="やり直す (Ctrl+Y)">
+        <button id="btnRedo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="やり直す (Ctrl+Y)">
           <i class="fa-solid fa-rotate-right"></i>
         </button>
         <div class="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1"></div>
-        <button onclick="fitView()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="全体表示 (Ctrl+0)">
+        <button id="btnFit" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="全体表示 (Ctrl+0)">
           <i class="fa-solid fa-expand sm:mr-1"></i><span class="hidden sm:inline">全体</span>
         </button>
-        <button onclick="exportPNG()" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5" title="画像書き出し">
+        <button id="btnExportPng" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5" title="画像書き出し">
           <i class="fa-solid fa-camera"></i><span class="hidden sm:inline">PNG保存</span>
         </button>
-        <button onclick="exportJSON()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON保存">
+        <button id="btnExportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON保存">
           <i class="fa-solid fa-download"></i>
         </button>
-        <button onclick="document.getElementById('fileInput').click()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON読込">
+        <button id="btnImportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON読込">
           <i class="fa-solid fa-folder-open"></i>
         </button>
-        <button onclick="toggleSidePanel()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="詳細パネル切替">
+        <button id="btnToggleSide" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="詳細パネル切替">
           <i class="fa-solid fa-sliders"></i>
         </button>
         <input type="file" id="fileInput" accept=".json,application/json" class="hidden">
       </div>
-
     </div>
   </header>
 
   <!-- ワークスペース -->
   <main class="flex-1 flex min-h-0 relative">
-
-    <!-- 左フローティングツールバー -->
+    <!-- 左ツールバー -->
     <div class="absolute left-4 top-4 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 shadow-md">
-      <button onclick="addChildNode()" class="w-9 h-9 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 flex items-center justify-center transition" title="子ノード追加 (Tab)">
-        <i class="fa-solid fa-plus text-sm"></i>
+      <button id="btnAddChild" class="w-9 h-9 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 flex items-center justify-center transition" title="子ノード追加 (Tab)">
+        <i class="fa-solid fa-plus text-sm pointer-events-none"></i>
       </button>
-      <button onclick="addSiblingNode()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="兄弟ノード追加 (Enter)">
-        <i class="fa-solid fa-arrows-split-up-and-left text-sm"></i>
+      <button id="btnAddSibling" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="兄弟ノード追加 (Enter)">
+        <i class="fa-solid fa-arrows-split-up-and-left text-sm pointer-events-none"></i>
       </button>
-      <button onclick="deleteNode()" class="w-9 h-9 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition" title="削除 (Delete)">
-        <i class="fa-solid fa-trash-can text-sm"></i>
+      <button id="btnDelete" class="w-9 h-9 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition" title="削除 (Delete)">
+        <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
       </button>
-      <button onclick="toggleCollapse()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="開閉 (Space)">
-        <i class="fa-solid fa-chevron-down text-sm"></i>
+      <button id="btnToggleFold" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="開閉 (Space)">
+        <i class="fa-solid fa-chevron-down text-sm pointer-events-none"></i>
       </button>
       <div class="w-full h-px bg-slate-200 my-0.5"></div>
-      <button onclick="searchPrompt()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="ノード検索">
-        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+      <button id="btnSearch" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="ノード検索">
+        <i class="fa-solid fa-magnifying-glass text-sm pointer-events-none"></i>
       </button>
     </div>
 
@@ -98,92 +92,82 @@
     <div class="flex-1 w-full h-full relative overflow-hidden canvas-bg">
       <svg id="map" class="w-full h-full touch-none cursor-grab active:cursor-grabbing"></svg>
 
-      <!-- ズームコントロール -->
+      <!-- ズーム操作 -->
       <div class="absolute bottom-4 left-4 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl border border-slate-200 shadow-sm text-xs font-bold text-slate-600">
-        <button onclick="applyZoom(1/1.15)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
-          <i class="fa-solid fa-minus"></i>
+        <button id="btnZoomOut" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-minus pointer-events-none"></i>
         </button>
-        <span id="zoomRate" onclick="resetZoom()" class="px-2 cursor-pointer hover:text-indigo-600">100%</span>
-        <button onclick="applyZoom(1.15)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
-          <i class="fa-solid fa-plus"></i>
+        <span id="zoomRate" class="px-2 cursor-pointer hover:text-indigo-600">100%</span>
+        <button id="btnZoomIn" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-plus pointer-events-none"></i>
         </button>
       </div>
 
-      <!-- 操作ヒントバナー -->
       <div class="hidden lg:block absolute bottom-4 left-44 z-10 text-[11px] font-medium text-slate-400 pointer-events-none">
-        Tab：子ノード ｜ Enter：兄弟ノード ｜ ダブルクリック/F2：編集 ｜ Space：開閉 ｜ Delete：削除 ｜ ドラッグ：親付け替え
+        クリック：選択 ｜ Tab：子ノード追加 ｜ Enter：兄弟ノード追加 ｜ ダブルクリック/F2：編集 ｜ Space：開閉 ｜ Delete：削除 ｜ ドラッグ：親付け替え
       </div>
     </div>
 
-    <!-- インライン編集テキストエリア -->
+    <!-- インライン編集用テキストエリア -->
     <textarea id="nodeEditor" wrap="off" class="fixed hidden z-30 outline-none border-2 border-indigo-500 rounded-xl px-3 py-1.5 bg-white text-slate-900 shadow-xl resize-none font-bold overflow-hidden leading-tight"></textarea>
 
-    <!-- ドラッグ中のゴースト表示 -->
+    <!-- ドラッグ中ゴースト -->
     <div id="dragGhost" class="fixed hidden pointer-events-none z-30 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg opacity-85"></div>
 
-    <!-- 右側詳細・編集サイドパネル -->
+    <!-- 右側サイドパネル -->
     <aside id="sidePanel" class="w-80 border-l border-slate-200 bg-white flex flex-col z-20 transition-all duration-300 shadow-lg">
       <div class="p-4 border-b border-slate-100 flex items-center justify-between">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
           <i class="fa-solid fa-sliders text-indigo-600"></i> ノード詳細設定
         </h3>
-        <button onclick="toggleSidePanel()" class="text-slate-400 hover:text-slate-600 text-xs">
+        <button id="btnCloseSide" class="text-slate-400 hover:text-slate-600 text-xs">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <div class="p-4 flex-1 overflow-y-auto space-y-4">
-        <!-- 選択中のノード名 -->
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">ノードテキスト</label>
           <textarea id="panelNodeText" rows="2" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-indigo-500" placeholder="ノード名を入力..."></textarea>
         </div>
 
-        <!-- テーマカラー選択 -->
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-2">テーマカラー</label>
           <div id="panelColors" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <!-- 補足メモ -->
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">補足メモ</label>
-          <textarea id="panelNodeMemo" rows="4" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-indigo-500" placeholder="ノードの補足やURLなどをメモ..."></textarea>
+          <textarea id="panelNodeMemo" rows="4" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-indigo-500" placeholder="補足情報を入力..."></textarea>
         </div>
 
-        <!-- 統計・階層情報 -->
         <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5 text-xs text-slate-500">
-          <div class="flex justify-between"><span>マップ全体の総ノード:</span><b id="statTotalNodes" class="text-slate-800">1</b></div>
+          <div class="flex justify-between"><span>総ノード数:</span><b id="statTotalNodes" class="text-slate-800">1</b></div>
           <div class="flex justify-between"><span>子ノード数:</span><b id="statChildCount" class="text-slate-800">0</b></div>
         </div>
 
-        <!-- アクションボタン -->
         <div class="space-y-2 pt-2">
-          <button onclick="addChildNode()" class="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+          <button id="btnSideAddChild" class="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-plus"></i> 子ノードを追加
           </button>
-          <button onclick="deleteNode()" id="btnPanelDelete" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+          <button id="btnSideDelete" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-trash-can"></i> このノードを削除
           </button>
         </div>
       </div>
     </aside>
-
   </main>
 
-  <!-- 免責事項・フッター（折りたたみ式） -->
+  <!-- 免責フッター -->
   <footer class="bg-white border-t border-slate-200 flex-none z-10">
     <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-[11px] text-slate-400">
       <div class="flex items-center gap-3">
         <span>&copy; 2026 selfup.net</span>
-        <button onclick="toggleDisclaimer()" class="underline hover:text-slate-600 transition">免責事項・注意事項</button>
+        <button id="btnDisclaimer" class="underline hover:text-slate-600 transition">免責事項・注意事項</button>
       </div>
-      <div>
-        <span>完全ブラウザ完結型・外部送信なし</span>
-      </div>
+      <div><span>完全ブラウザ完結型・外部送信なし</span></div>
     </div>
 
-    <!-- 免責ドロワー -->
     <div id="disclaimerBox" class="hidden border-t border-slate-100 bg-slate-50/70 p-4 text-xs text-slate-500">
       <div class="max-w-4xl mx-auto space-y-2">
         <h4 class="font-bold text-slate-700 flex items-center gap-1.5">
@@ -191,15 +175,13 @@
         </h4>
         <ul class="list-disc list-inside space-y-1 text-slate-600 text-[11px] leading-relaxed">
           <li>当サイトのWebツールは、個人が生成AIを活用して実験・学習目的で制作したプロトタイプです。</li>
-          <li>動作の正確性、完全性、安全性等についてはいかなる保証もいたしかねます。当ツールの利用により生じた直接・間接のいかなる損害・不都合についても、開発者は一切の責任を負いません。</li>
-          <li>個人の趣味運用の都合上、不具合修正や機能改善、個別のご要望への対応・サポートは原則として承っておりません。</li>
-          <li>各ツールで入力・処理されるマインドマップデータは、すべてお使いの端末（ブラウザのlocalStorage等）にのみ保持・処理され、外部サーバーへ送信・収集されることはありません。ブラウザのキャッシュ消去に備え、適宜「JSON保存」をご活用ください。</li>
+          <li>動作の正確性、完全性、安全性等についてはいかなる保証もいたしかねます。</li>
+          <li>各ツールで入力・処理されるマインドマップデータは、お使いの端末（ブラウザのlocalStorage）にのみ保持され、外部サーバーへ送信されることはありません。</li>
         </ul>
       </div>
     </div>
   </footer>
 
-  <!-- スクリプト部 -->
   <script>
   (() => {
     'use strict';
@@ -229,8 +211,7 @@
     let lastClick = { id: null, time: 0 };
     let boundingBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
 
-    // --- データモデル操作 ---
-    const makeNode = (text = '新しいノード') => ({
+    const makeNode = (text = '新しいトピック') => ({
       id: uid(),
       text,
       color: null,
@@ -310,7 +291,6 @@
       render();
     }
 
-    // --- レイアウト幾何計算（Radial：中央左右展開） ---
     function measure(node) {
       const lines = (node.text || '（無題）').split('\n');
       node._lines = lines;
@@ -361,7 +341,6 @@
       root._x = -root._w / 2;
       root._y = -root._h / 2;
 
-      // 第1階層を左右に振り分け
       const rightBranches = [];
       const leftBranches = [];
       root.children.forEach((c, idx) => {
@@ -369,7 +348,6 @@
         else leftBranches.push(c);
       });
 
-      // 右側計算 (dir = 1)
       let rTotalH = 0;
       rightBranches.forEach(c => { calcSubtree(c, 1); rTotalH += c._sh; });
       let rCursorY = -rTotalH / 2;
@@ -378,7 +356,6 @@
         rCursorY += c._sh;
       });
 
-      // 左側計算 (dir = -1)
       let lTotalH = 0;
       leftBranches.forEach(c => { calcSubtree(c, -1); lTotalH += c._sh; });
       let lCursorY = -lTotalH / 2;
@@ -388,7 +365,6 @@
       });
     }
 
-    // --- SVG描画 ---
     function renderSvg(forExport = false) {
       boundingBox = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
       let edgesSvg = '';
@@ -408,26 +384,23 @@
         const h = node._h;
         const isRoot = (depth === 0);
         const col = isRoot ? '#334155' : (node.color || branchColor);
-        const isSel = (!forExport && node === selected);
+        const isSel = (!forExport && selected && node.id === selected.id);
         const isCollapsed = node.collapsed && node.children.length > 0;
 
         updateBB(x - 10, y - h / 2 - 10, w + 20, h + 20);
 
-        // ノード本体
         nodesSvg += `<g data-id="${node.id}" style="cursor:pointer">`;
         if (isSel) {
           nodesSvg += `<rect x="${x - 4}" y="${y - h / 2 - 4}" width="${w + 8}" height="${h + 8}" rx="14" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-dasharray="4 3"/>`;
         }
         nodesSvg += `<rect x="${x}" y="${y - h / 2}" width="${w}" height="${h}" rx="10" fill="${isRoot ? '#1e293b' : '#ffffff'}" stroke="${col}" stroke-width="${isRoot ? 0 : 2}" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.06))"/>`;
 
-        // テキスト行
         node._lines.forEach((line, i) => {
           const textY = (y - h / 2) + 21 + (i * 18);
           nodesSvg += `<text x="${x + 14}" y="${textY}" fill="${isRoot ? '#ffffff' : '#1e293b'}" font-size="13" font-weight="700" font-family="${FONT_FAMILY}">${escapeHtml(line)}</text>`;
         });
         nodesSvg += `</g>`;
 
-        // 折りたたみバッジ
         if (isCollapsed) {
           const badgeX = dir >= 0 ? (x + w + 12) : (x - 12);
           updateBB(badgeX - 10, y - 10, 20, 20);
@@ -436,7 +409,6 @@
             <text x="${badgeX}" y="${y + 3.5}" text-anchor="middle" font-size="10" font-weight="bold" fill="#64748b">${node.children.length}</text>
           </g>`;
         } else {
-          // 子への接続線（ベジェ曲線）
           node.children.forEach((c, i) => {
             const childCol = c.color || (isRoot ? PALETTE[i % PALETTE.length] : branchColor);
             const childDir = isRoot ? (i % 2 === 0 ? 1 : -1) : dir;
@@ -478,9 +450,8 @@
       return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // --- カメラ操作（パン＆ズーム） ---
     function fitView() {
-      renderSvg(); // boundingBoxの最新化
+      renderSvg();
       const r = svg.getBoundingClientRect();
       const pad = 80;
       const w = Math.max(100, boundingBox.x1 - boundingBox.x0 + pad * 2);
@@ -511,7 +482,6 @@
       applyCamera();
     }
 
-    // --- インライン編集 ---
     function startEdit(node) {
       if (!node) return;
       editingNode = node;
@@ -563,7 +533,6 @@
 
     editor.addEventListener('blur', () => finishEdit(true));
 
-    // --- ノード操作アクション ---
     function addChildNode() {
       if (!selected) selected = root;
       snapshot();
@@ -576,7 +545,7 @@
     }
 
     function addSiblingNode() {
-      if (!selected || selected === root) return addChildNode();
+      if (!selected || selected.id === root.id) return addChildNode();
       const parent = findParent(selected);
       if (!parent) return addChildNode();
       snapshot();
@@ -589,7 +558,7 @@
     }
 
     function deleteNode() {
-      if (!selected || selected === root) return;
+      if (!selected || selected.id === root.id) return;
       const parent = findParent(selected);
       if (!parent) return;
       snapshot();
@@ -625,7 +594,6 @@
         }
         selected = hit;
         render();
-        // 該当ノードを画面中央へフォーカス
         const r = svg.getBoundingClientRect();
         view.x = r.width / 2 - hit._x * view.k;
         view.y = r.height / 2 - hit._y * view.k;
@@ -635,11 +603,10 @@
       }
     }
 
-    // --- ポインターイベント（パン & ドラッグ付け替え） ---
+    // --- ポインターイベント ---
     svg.addEventListener('pointerdown', e => {
       if (editingNode) finishEdit(true);
 
-      // 開閉ボタンクリック
       const foldBtn = e.target.closest('[data-fold]');
       if (foldBtn) {
         const n = findNode(foldBtn.dataset.fold);
@@ -652,7 +619,6 @@
         return;
       }
 
-      // ノード選択 & ダブルクリック編集 & ドラッグ開始
       const nodeG = e.target.closest('[data-id]');
       if (nodeG) {
         const node = findNode(nodeG.dataset.id);
@@ -665,12 +631,11 @@
           setTimeout(() => startEdit(node), 10);
         } else {
           lastClick = { id: node.id, time: now };
-          if (node !== root) {
+          if (node.id !== root.id) {
             dragNodeState = { node, startX: e.clientX, startY: e.clientY, active: false };
           }
         }
       } else {
-        // 背景パン開始
         panState = { x: e.clientX - view.x, y: e.clientY - view.y };
       }
       svg.setPointerCapture(e.pointerId);
@@ -683,7 +648,7 @@
         applyCamera();
       } else if (dragNodeState) {
         const dist = Math.hypot(e.clientX - dragNodeState.startX, e.clientY - dragNodeState.startY);
-        if (!dragNodeState.active && dist > 7) {
+        if (!dragNodeState.active && dist > 5) {
           dragNodeState.active = true;
           ghost.textContent = dragNodeState.node.text.split('\n')[0];
           ghost.style.display = 'block';
@@ -705,8 +670,7 @@
           const moving = dragNodeState.node;
           const oldParent = findParent(moving);
 
-          // 循環参照チェック & 同一親チェック
-          if (target && target !== moving && !findNode(target.id, moving) && oldParent !== target) {
+          if (target && target.id !== moving.id && !findNode(target.id, moving) && oldParent.id !== target.id) {
             snapshot();
             oldParent.children.splice(oldParent.children.indexOf(moving), 1);
             target.children.push(moving);
@@ -725,9 +689,9 @@
       applyZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, { x: e.clientX, y: e.clientY });
     }, { passive: false });
 
-    // --- キーボードショートカット ---
+    // --- キーボード操作 ---
     window.addEventListener('keydown', e => {
-      if (editingNode || ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (editingNode || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       const mod = e.ctrlKey || e.metaKey;
 
       if (mod) {
@@ -744,22 +708,19 @@
       else if (e.key === ' ') { e.preventDefault(); toggleCollapse(); }
     });
 
-    // --- 詳細サイドパネル管理 ---
     function updateSidePanel() {
-      const n = selected;
-      if (!n) return;
-      $('panelNodeText').value = n.text;
-      $('panelNodeMemo').value = n.memo || '';
+      const n = selected || root;
+      $('panelNodeText').value = n ? n.text : '';
+      $('panelNodeMemo').value = n ? (n.memo || '') : '';
       $('statTotalNodes').innerText = countNodes();
-      $('statChildCount').innerText = n.children.length;
-      $('btnPanelDelete').disabled = (n === root);
+      $('statChildCount').innerText = n ? n.children.length : 0;
+      $('btnSideDelete').disabled = (!n || n.id === root.id);
 
-      // カラーパレット
       const palBox = $('panelColors');
       palBox.innerHTML = '';
       PALETTE.forEach(c => {
         const btn = document.createElement('button');
-        btn.className = `w-6 h-6 rounded-full border-2 transition ${n.color === c ? 'border-slate-800 scale-110 shadow-sm' : 'border-white hover:scale-105'}`;
+        btn.className = `w-6 h-6 rounded-full border-2 transition ${n && n.color === c ? 'border-slate-800 scale-110 shadow-sm' : 'border-white hover:scale-105'}`;
         btn.style.backgroundColor = c;
         btn.onclick = () => { snapshot(); n.color = c; render(); };
         palBox.appendChild(btn);
@@ -783,16 +744,30 @@
       saveToStorage();
     });
 
-    window.toggleSidePanel = () => {
-      const p = $('sidePanel');
-      p.classList.toggle('hidden');
-    };
+    // --- ボタンバインド ---
+    $('btnUndo').onclick = undo;
+    $('btnRedo').onclick = redo;
+    $('btnFit').onclick = fitView;
+    $('btnExportPng').onclick = exportPNG;
+    $('btnExportJson').onclick = exportJSON;
+    $('btnImportJson').onclick = () => $('fileInput').click();
+    $('btnToggleSide').onclick = () => $('sidePanel').classList.toggle('hidden');
+    $('btnCloseSide').onclick = () => $('sidePanel').classList.add('hidden');
+    $('btnDisclaimer').onclick = () => $('disclaimerBox').classList.toggle('hidden');
 
-    window.toggleDisclaimer = () => {
-      $('disclaimerBox').classList.toggle('hidden');
-    };
+    $('btnAddChild').onclick = addChildNode;
+    $('btnAddSibling').onclick = addSiblingNode;
+    $('btnDelete').onclick = deleteNode;
+    $('btnToggleFold').onclick = toggleCollapse;
+    $('btnSearch').onclick = searchPrompt;
 
-    // --- エクスポート & 保存 ---
+    $('btnZoomIn').onclick = () => applyZoom(1.15);
+    $('btnZoomOut').onclick = () => applyZoom(1 / 1.15);
+    $('zoomRate').onclick = resetZoom;
+
+    $('btnSideAddChild').onclick = addChildNode;
+    $('btnSideDelete').onclick = deleteNode;
+
     function saveToStorage() {
       try {
         localStorage.setItem(STORAGE_KEY, serialize({ title: $('mapTitleInput').value, root }));
@@ -802,14 +777,12 @@
       }
     }
 
-    $('mapTitleInput').addEventListener('input', () => {
-      saveToStorage();
-    });
+    $('mapTitleInput').addEventListener('input', saveToStorage);
 
-    window.exportJSON = () => {
+    function exportJSON() {
       const blob = new Blob([serialize({ title: $('mapTitleInput').value, version: 1, root })], { type: 'application/json' });
       downloadFile(blob, `${$('mapTitleInput').value || 'mindmap'}.json`);
-    };
+    }
 
     $('fileInput').addEventListener('change', e => {
       const file = e.target.files[0];
@@ -826,14 +799,14 @@
           render();
           fitView();
         } catch (err) {
-          alert('JSONファイルの読み込みに失敗しました。形式をご確認ください。');
+          alert('JSONファイルの読み込みに失敗しました。');
         }
       };
       r.readAsText(file);
       e.target.value = '';
     });
 
-    window.exportPNG = () => {
+    function exportPNG() {
       renderSvg(true);
       const pad = 60;
       const w = boundingBox.x1 - boundingBox.x0 + pad * 2;
@@ -857,8 +830,8 @@
         c.toBlob(b => downloadFile(b, `${$('mapTitleInput').value || 'mindmap'}.png`));
       };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
-      render(); // 選択枠の復帰
-    };
+      render();
+    }
 
     function downloadFile(blob, name) {
       const a = document.createElement('a');
@@ -868,7 +841,6 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
-    // --- 初期起動 ---
     function init() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
