@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MindFlow - マインドマップ | selfup.net</title>
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif; }
+    .canvas-bg {
+      background-color: #fafbfc;
+      background-image: radial-gradient(#dce1e8 0.85px, transparent 0.85px);
+      background-size: 24px 24px;
+    }
+    #map text { user-select: none; -webkit-user-select: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+  <!-- ヘッダー -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs flex-none">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+      
+      <!-- ロゴ & Apps Hub戻りリンク -->
+      <div class="flex items-center gap-3">
+        <a href="../" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="hidden sm:inline">Apps Hub</span>
+        </a>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-500/20">
+            <i class="fa-solid fa-sitemap"></i>
+          </div>
+          <input id="mapTitleInput" class="text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100 focus:bg-white border border-transparent focus:border-indigo-400 rounded-lg px-2 py-0.5 outline-none max-w-[160px] sm:max-w-xs transition" value="マインドマップ">
+        </div>
+        <span id="saveBadge" class="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <i class="fa-solid fa-circle-check mr-1"></i>保存済み
+        </span>
+      </div>
+
+      <!-- アクションボタン群 -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button onclick="undo()" id="btnUndo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="元に戻す (Ctrl+Z)">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        <button onclick="redo()" id="btnRedo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="やり直す (Ctrl+Y)">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <div class="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1"></div>
+        <button onclick="fitView()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="全体表示 (Ctrl+0)">
+          <i class="fa-solid fa-expand sm:mr-1"></i><span class="hidden sm:inline">全体</span>
+        </button>
+        <button onclick="exportPNG()" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5" title="画像書き出し">
+          <i class="fa-solid fa-camera"></i><span class="hidden sm:inline">PNG保存</span>
+        </button>
+        <button onclick="exportJSON()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON保存">
+          <i class="fa-solid fa-download"></i>
+        </button>
+        <button onclick="document.getElementById('fileInput').click()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON読込">
+          <i class="fa-solid fa-folder-open"></i>
+        </button>
+        <button onclick="toggleSidePanel()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="詳細パネル切替">
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+        <input type="file" id="fileInput" accept=".json,application/json" class="hidden">
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ワークスペース -->
+  <main class="flex-1 flex min-h-0 relative">
+
+    <!-- 左フローティングツールバー -->
+    <div class="absolute left-4 top-4 z-20 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 shadow-md">
+      <button onclick="addChildNode()" class="w-9 h-9 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 flex items-center justify-center transition" title="子ノード追加 (Tab)">
+        <i class="fa-solid fa-plus text-sm"></i>
+      </button>
+      <button onclick="addSiblingNode()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="兄弟ノード追加 (Enter)">
+        <i class="fa-solid fa-arrows-split-up-and-left text-sm"></i>
+      </button>
+      <button onclick="deleteNode()" class="w-9 h-9 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition" title="削除 (Delete)">
+        <i class="fa-solid fa-trash-can text-sm"></i>
+      </button>
+      <button onclick="toggleCollapse()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="開閉 (Space)">
+        <i class="fa-solid fa-chevron-down text-sm"></i>
+      </button>
+      <div class="w-full h-px bg-slate-200 my-0.5"></div>
+      <button onclick="searchPrompt()" class="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-600 flex items-center justify-center transition" title="ノード検索">
+        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+      </button>
+    </div>
+
+    <!-- SVGキャンバス -->
+    <div class="flex-1 w-full h-full relative overflow-hidden canvas-bg">
+      <svg id="map" class="w-full h-full touch-none cursor-grab active:cursor-grabbing"></svg>
+
+      <!-- ズームコントロール -->
+      <div class="absolute bottom-4 left-4 z-20 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl border border-slate-200 shadow-sm text-xs font-bold text-slate-600">
+        <button onclick="applyZoom(1/1.15)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <span id="zoomRate" onclick="resetZoom()" class="px-2 cursor-pointer hover:text-indigo-600">100%</span>
+        <button onclick="applyZoom(1.15)" class="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+
+      <!-- 操作ヒントバナー -->
+      <div class="hidden lg:block absolute bottom-4 left-44 z-10 text-[11px] font-medium text-slate-400 pointer-events-none">
+        Tab：子ノード ｜ Enter：兄弟ノード ｜ ダブルクリック/F2：編集 ｜ Space：開閉 ｜ Delete：削除 ｜ ドラッグ：親付け替え
+      </div>
+    </div>
+
+    <!-- インライン編集テキストエリア -->
+    <textarea id="nodeEditor" wrap="off" class="fixed hidden z-30 outline-none border-2 border-indigo-500 rounded-xl px-3 py-1.5 bg-white text-slate-900 shadow-xl resize-none font-bold overflow-hidden leading-tight"></textarea>
+
+    <!-- ドラッグ中のゴースト表示 -->
+    <div id="dragGhost" class="fixed hidden pointer-events-none z-30 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg opacity-85"></div>
+
+    <!-- 右側詳細・編集サイドパネル -->
+    <aside id="sidePanel" class="w-80 border-l border-slate-200 bg-white flex flex-col z-20 transition-all duration-300 shadow-lg">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-sliders text-indigo-600"></i> ノード詳細設定
+        </h3>
+        <button onclick="toggleSidePanel()" class="text-slate-400 hover:text-slate-600 text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto space-y-4">
+        <!-- 選択中のノード名 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">ノードテキスト</label>
+          <textarea id="panelNodeText" rows="2" class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-indigo-500" placeholder="ノード名を入力..."></textarea>
+        </div>
+
+        <!-- テーマカラー選択 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-2">テーマカラー</label>
+          <div id="panelColors" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- 補足メモ -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">補足メモ</label>
+          <textarea id="panelNodeMemo" rows="4" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-indigo-500" placeholder="ノードの補足やURLなどをメモ..."></textarea>
+        </div>
+
+        <!-- 統計・階層情報 -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5 text-xs text-slate-500">
+          <div class="flex justify-between"><span>マップ全体の総ノード:</span><b id="statTotalNodes" class="text-slate-800">1</b></div>
+          <div class="flex justify-between"><span>子ノード数:</span><b id="statChildCount" class="text-slate-800">0</b></div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="space-y-2 pt-2">
+          <button onclick="addChildNode()" class="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> 子ノードを追加
+          </button>
+          <button onclick="deleteNode()" id="btnPanelDelete" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i> このノードを削除
+          </button>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- 免責事項・フッター（折りたたみ式） -->
+  <footer class="bg-white border-t border-slate-200 flex-none z-10">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-[11px] text-slate-400">
+      <div class="flex items-center gap-3">
+        <span>&copy; 2026 selfup.net</span>
+        <button onclick="toggleDisclaimer()" class="underline hover:text-slate-600 transition">免責事項・注意事項</button>
+      </div>
+      <div>
+        <span>完全ブラウザ完結型・外部送信なし</span>
+      </div>
+    </div>
+
+    <!-- 免責ドロワー -->
+    <div id="disclaimerBox" class="hidden border-t border-slate-100 bg-slate-50/70 p-4 text-xs text-slate-500">
+      <div class="max-w-4xl mx-auto space-y-2">
+        <h4 class="font-bold text-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> ご利用にあたっての注意事項・免責事項
+        </h4>
+        <ul class="list-disc list-inside space-y-1 text-slate-600 text-[11px] leading-relaxed">
+          <li>当サイトのWebツールは、個人が生成AIを活用して実験・学習目的で制作したプロトタイプです。</li>
+          <li>動作の正確性、完全性、安全性等についてはいかなる保証もいたしかねます。当ツールの利用により生じた直接・間接のいかなる損害・不都合についても、開発者は一切の責任を負いません。</li>
+          <li>個人の趣味運用の都合上、不具合修正や機能改善、個別のご要望への対応・サポートは原則として承っておりません。</li>
+          <li>各ツールで入力・処理されるマインドマップデータは、すべてお使いの端末（ブラウザのlocalStorage等）にのみ保持・処理され、外部サーバーへ送信・収集されることはありません。ブラウザのキャッシュ消去に備え、適宜「JSON保存」をご活用ください。</li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- スクリプト部 -->
+  <script>
+  (() => {
+    'use strict';
+
+    const STORAGE_KEY = 'selfup_mindflow_v1';
+    const PALETTE = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#d97706', '#64748b'];
+    const FONT_FAMILY = 'Plus Jakarta Sans, "Noto Sans JP", sans-serif';
+
+    const $ = id => document.getElementById(id);
+    const svg = $('map');
+    const editor = $('nodeEditor');
+    const ghost = $('dragGhost');
+    const cx = document.createElement('canvas').getContext('2d');
+    cx.font = 'bold 13px ' + FONT_FAMILY;
+
+    let seq = 0;
+    const uid = () => 'n' + (++seq);
+
+    let root = null;
+    let selected = null;
+    let editingNode = null;
+    let history = [];
+    let future = [];
+    let view = { x: 0, y: 0, k: 1 };
+    let panState = null;
+    let dragNodeState = null;
+    let lastClick = { id: null, time: 0 };
+    let boundingBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+
+    // --- データモデル操作 ---
+    const makeNode = (text = '新しいノード') => ({
+      id: uid(),
+      text,
+      color: null,
+      memo: '',
+      collapsed: false,
+      children: []
+    });
+
+    const cloneNode = n => ({
+      id: uid(),
+      text: String(n && n.text || 'ノード').slice(0, 300),
+      color: /^#[0-9a-f]{6}$/i.test(n && n.color) ? n.color : null,
+      memo: String(n && n.memo || ''),
+      collapsed: !!(n && n.collapsed),
+      children: Array.isArray(n && n.children) ? n.children.map(cloneNode) : []
+    });
+
+    const serialize = o => JSON.stringify(o, (k, v) => k.startsWith('_') ? undefined : v);
+
+    function findNode(id, cur = root) {
+      if (!cur) return null;
+      if (cur.id === id) return cur;
+      for (const c of cur.children) {
+        const found = findNode(id, c);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function findParent(target, cur = root) {
+      if (!cur || !target) return null;
+      if (cur.children.includes(target)) return cur;
+      for (const c of cur.children) {
+        const p = findParent(target, c);
+        if (p) return p;
+      }
+      return null;
+    }
+
+    function countNodes(cur = root) {
+      if (!cur) return 0;
+      let cnt = 1;
+      for (const c of cur.children) cnt += countNodes(c);
+      return cnt;
+    }
+
+    function snapshot() {
+      history.push(serialize({ title: $('mapTitleInput').value, root }));
+      if (history.length > 50) history.shift();
+      future = [];
+      updateButtons();
+    }
+
+    function updateButtons() {
+      $('btnUndo').disabled = !history.length;
+      $('btnRedo').disabled = !future.length;
+    }
+
+    function undo() {
+      if (!history.length) return;
+      future.push(serialize({ title: $('mapTitleInput').value, root }));
+      const prev = JSON.parse(history.pop());
+      loadState(prev);
+    }
+
+    function redo() {
+      if (!future.length) return;
+      history.push(serialize({ title: $('mapTitleInput').value, root }));
+      const next = JSON.parse(future.pop());
+      loadState(next);
+    }
+
+    function loadState(st) {
+      if (st.title) $('mapTitleInput').value = st.title;
+      root = cloneNode(st.root);
+      selected = findNode(selected?.id) || root;
+      render();
+    }
+
+    // --- レイアウト幾何計算（Radial：中央左右展開） ---
+    function measure(node) {
+      const lines = (node.text || '（無題）').split('\n');
+      node._lines = lines;
+      let maxW = 40;
+      for (const line of lines) {
+        const w = cx.measureText(line).width;
+        if (w > maxW) maxW = w;
+      }
+      node._w = Math.max(70, Math.ceil(maxW + 28));
+      node._h = Math.max(34, lines.length * 18 + 14);
+    }
+
+    function calcSubtree(node, dir) {
+      measure(node);
+      const kids = node.collapsed ? [] : node.children;
+      if (!kids.length) {
+        node._sh = node._h + 16;
+        return;
+      }
+      let sumH = 0;
+      kids.forEach(c => {
+        calcSubtree(c, dir);
+        sumH += c._sh;
+      });
+      node._sh = Math.max(sumH, node._h + 16);
+    }
+
+    function positionSubtree(node, x, yStart, dir) {
+      node._x = x;
+      node._dir = dir;
+      const kids = node.collapsed ? [] : node.children;
+      if (!kids.length) {
+        node._y = yStart + node._sh / 2;
+        return;
+      }
+      const sumKidsH = kids.reduce((acc, c) => acc + c._sh, 0);
+      let cursorY = yStart + (node._sh - sumKidsH) / 2;
+      kids.forEach(c => {
+        const nextX = x + dir * (node._w + 48);
+        positionSubtree(c, nextX, cursorY, dir);
+        cursorY += c._sh;
+      });
+      node._y = (kids[0]._y + kids[kids.length - 1]._y) / 2;
+    }
+
+    function calculateLayout() {
+      measure(root);
+      root._x = -root._w / 2;
+      root._y = -root._h / 2;
+
+      // 第1階層を左右に振り分け
+      const rightBranches = [];
+      const leftBranches = [];
+      root.children.forEach((c, idx) => {
+        if (idx % 2 === 0) rightBranches.push(c);
+        else leftBranches.push(c);
+      });
+
+      // 右側計算 (dir = 1)
+      let rTotalH = 0;
+      rightBranches.forEach(c => { calcSubtree(c, 1); rTotalH += c._sh; });
+      let rCursorY = -rTotalH / 2;
+      rightBranches.forEach(c => {
+        positionSubtree(c, root._w / 2 + 52, rCursorY, 1);
+        rCursorY += c._sh;
+      });
+
+      // 左側計算 (dir = -1)
+      let lTotalH = 0;
+      leftBranches.forEach(c => { calcSubtree(c, -1); lTotalH += c._sh; });
+      let lCursorY = -lTotalH / 2;
+      leftBranches.forEach(c => {
+        positionSubtree(c, -(root._w / 2 + 52 + c._w), lCursorY, -1);
+        lCursorY += c._sh;
+      });
+    }
+
+    // --- SVG描画 ---
+    function renderSvg(forExport = false) {
+      boundingBox = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+      let edgesSvg = '';
+      let nodesSvg = '';
+
+      function updateBB(x, y, w, h) {
+        boundingBox.x0 = Math.min(boundingBox.x0, x);
+        boundingBox.y0 = Math.min(boundingBox.y0, y);
+        boundingBox.x1 = Math.max(boundingBox.x1, x + w);
+        boundingBox.y1 = Math.max(boundingBox.y1, y + h);
+      }
+
+      function drawWalk(node, branchColor, depth, dir) {
+        const x = node._x;
+        const y = node._y;
+        const w = node._w;
+        const h = node._h;
+        const isRoot = (depth === 0);
+        const col = isRoot ? '#334155' : (node.color || branchColor);
+        const isSel = (!forExport && node === selected);
+        const isCollapsed = node.collapsed && node.children.length > 0;
+
+        updateBB(x - 10, y - h / 2 - 10, w + 20, h + 20);
+
+        // ノード本体
+        nodesSvg += `<g data-id="${node.id}" style="cursor:pointer">`;
+        if (isSel) {
+          nodesSvg += `<rect x="${x - 4}" y="${y - h / 2 - 4}" width="${w + 8}" height="${h + 8}" rx="14" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+        }
+        nodesSvg += `<rect x="${x}" y="${y - h / 2}" width="${w}" height="${h}" rx="10" fill="${isRoot ? '#1e293b' : '#ffffff'}" stroke="${col}" stroke-width="${isRoot ? 0 : 2}" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.06))"/>`;
+
+        // テキスト行
+        node._lines.forEach((line, i) => {
+          const textY = (y - h / 2) + 21 + (i * 18);
+          nodesSvg += `<text x="${x + 14}" y="${textY}" fill="${isRoot ? '#ffffff' : '#1e293b'}" font-size="13" font-weight="700" font-family="${FONT_FAMILY}">${escapeHtml(line)}</text>`;
+        });
+        nodesSvg += `</g>`;
+
+        // 折りたたみバッジ
+        if (isCollapsed) {
+          const badgeX = dir >= 0 ? (x + w + 12) : (x - 12);
+          updateBB(badgeX - 10, y - 10, 20, 20);
+          nodesSvg += `<g data-fold="${node.id}" style="cursor:pointer">
+            <circle cx="${badgeX}" cy="${y}" r="9" fill="#ffffff" stroke="${col}" stroke-width="1.5"/>
+            <text x="${badgeX}" y="${y + 3.5}" text-anchor="middle" font-size="10" font-weight="bold" fill="#64748b">${node.children.length}</text>
+          </g>`;
+        } else {
+          // 子への接続線（ベジェ曲線）
+          node.children.forEach((c, i) => {
+            const childCol = c.color || (isRoot ? PALETTE[i % PALETTE.length] : branchColor);
+            const childDir = isRoot ? (i % 2 === 0 ? 1 : -1) : dir;
+            const sx = isRoot ? (childDir > 0 ? root._w / 2 : -root._w / 2) : (childDir > 0 ? x + w : x);
+            const sy = y;
+            const ex = childDir > 0 ? c._x : c._x + c._w;
+            const ey = c._y;
+            const cpx1 = sx + childDir * 24;
+            const cpx2 = ex - childDir * 24;
+            const strokeW = Math.max(1.8, 3.2 - depth * 0.4);
+
+            edgesSvg += `<path d="M${sx} ${sy} C${cpx1} ${sy}, ${cpx2} ${ey}, ${ex} ${ey}" fill="none" stroke="${childCol}" stroke-width="${strokeW}" stroke-linecap="round"/>`;
+            drawWalk(c, childCol, depth + 1, childDir);
+          });
+        }
+      }
+
+      drawWalk(root, '#4f46e5', 0, 1);
+      return edgesSvg + nodesSvg;
+    }
+
+    function applyCamera() {
+      const g = svg.firstChild;
+      if (g) {
+        g.setAttribute('transform', `translate(${view.x}, ${view.y}) scale(${view.k})`);
+      }
+      $('zoomRate').innerText = Math.round(view.k * 100) + '%';
+    }
+
+    function render() {
+      calculateLayout();
+      svg.innerHTML = `<g>${renderSvg()}</g>`;
+      applyCamera();
+      updateSidePanel();
+      saveToStorage();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // --- カメラ操作（パン＆ズーム） ---
+    function fitView() {
+      renderSvg(); // boundingBoxの最新化
+      const r = svg.getBoundingClientRect();
+      const pad = 80;
+      const w = Math.max(100, boundingBox.x1 - boundingBox.x0 + pad * 2);
+      const h = Math.max(100, boundingBox.y1 - boundingBox.y0 + pad * 2);
+      const k = Math.min(1.5, Math.max(0.3, Math.min(r.width / w, r.height / h)));
+      const cx = (boundingBox.x0 + boundingBox.x1) / 2;
+      const cy = (boundingBox.y0 + boundingBox.y1) / 2;
+
+      view.k = k;
+      view.x = r.width / 2 - cx * k;
+      view.y = r.height / 2 - cy * k;
+      applyCamera();
+    }
+
+    function applyZoom(factor, center = null) {
+      const r = svg.getBoundingClientRect();
+      const cx = center ? center.x - r.left : r.width / 2;
+      const cy = center ? center.y - r.top : r.height / 2;
+      const nextK = Math.min(2.5, Math.max(0.2, view.k * factor));
+      view.x = cx - (cx - view.x) * (nextK / view.k);
+      view.y = cy - (cy - view.y) * (nextK / view.k);
+      view.k = nextK;
+      applyCamera();
+    }
+
+    function resetZoom() {
+      view.k = 1;
+      applyCamera();
+    }
+
+    // --- インライン編集 ---
+    function startEdit(node) {
+      if (!node) return;
+      editingNode = node;
+      const r = svg.getBoundingClientRect();
+      const left = r.left + view.x + node._x * view.k;
+      const top = r.top + view.y + (node._y - node._h / 2) * view.k;
+      const width = Math.max(120, (node._w + 40) * view.k);
+      const height = Math.max(34, node._h * view.k);
+
+      editor.style.display = 'block';
+      editor.style.left = left + 'px';
+      editor.style.top = top + 'px';
+      editor.style.width = width + 'px';
+      editor.style.height = height + 'px';
+      editor.style.fontSize = Math.round(13 * view.k) + 'px';
+      editor.value = node.text;
+      editor.focus();
+      editor.select();
+    }
+
+    function finishEdit(apply) {
+      if (!editingNode) return;
+      const node = editingNode;
+      const val = editor.value.trim();
+      editingNode = null;
+      editor.style.display = 'none';
+
+      if (apply && val && val !== node.text) {
+        snapshot();
+        node.text = val;
+        render();
+      }
+    }
+
+    editor.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.isComposing) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        finishEdit(true);
+      } else if (e.key === 'Escape') {
+        finishEdit(false);
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        finishEdit(true);
+        addChildNode();
+      }
+    });
+
+    editor.addEventListener('blur', () => finishEdit(true));
+
+    // --- ノード操作アクション ---
+    function addChildNode() {
+      if (!selected) selected = root;
+      snapshot();
+      const child = makeNode('新しいトピック');
+      selected.collapsed = false;
+      selected.children.push(child);
+      selected = child;
+      render();
+      setTimeout(() => startEdit(child), 20);
+    }
+
+    function addSiblingNode() {
+      if (!selected || selected === root) return addChildNode();
+      const parent = findParent(selected);
+      if (!parent) return addChildNode();
+      snapshot();
+      const sibling = makeNode('新しいトピック');
+      const idx = parent.children.indexOf(selected);
+      parent.children.splice(idx + 1, 0, sibling);
+      selected = sibling;
+      render();
+      setTimeout(() => startEdit(sibling), 20);
+    }
+
+    function deleteNode() {
+      if (!selected || selected === root) return;
+      const parent = findParent(selected);
+      if (!parent) return;
+      snapshot();
+      const idx = parent.children.indexOf(selected);
+      parent.children.splice(idx, 1);
+      selected = parent.children[idx] || parent.children[idx - 1] || parent;
+      render();
+    }
+
+    function toggleCollapse() {
+      if (!selected || !selected.children.length) return;
+      snapshot();
+      selected.collapsed = !selected.collapsed;
+      render();
+    }
+
+    function searchPrompt() {
+      const q = prompt('検索するノードテキストを入力してください:');
+      if (!q) return;
+      const found = [];
+      function walk(n) {
+        if (n.text.toLowerCase().includes(q.toLowerCase())) found.push(n);
+        n.children.forEach(walk);
+      }
+      walk(root);
+
+      if (found.length) {
+        const hit = found[0];
+        let p = findParent(hit);
+        while (p) {
+          p.collapsed = false;
+          p = findParent(p);
+        }
+        selected = hit;
+        render();
+        // 該当ノードを画面中央へフォーカス
+        const r = svg.getBoundingClientRect();
+        view.x = r.width / 2 - hit._x * view.k;
+        view.y = r.height / 2 - hit._y * view.k;
+        applyCamera();
+      } else {
+        alert('該当するノードが見つかりませんでした。');
+      }
+    }
+
+    // --- ポインターイベント（パン & ドラッグ付け替え） ---
+    svg.addEventListener('pointerdown', e => {
+      if (editingNode) finishEdit(true);
+
+      // 開閉ボタンクリック
+      const foldBtn = e.target.closest('[data-fold]');
+      if (foldBtn) {
+        const n = findNode(foldBtn.dataset.fold);
+        if (n) {
+          snapshot();
+          n.collapsed = false;
+          selected = n;
+          render();
+        }
+        return;
+      }
+
+      // ノード選択 & ダブルクリック編集 & ドラッグ開始
+      const nodeG = e.target.closest('[data-id]');
+      if (nodeG) {
+        const node = findNode(nodeG.dataset.id);
+        selected = node;
+        render();
+
+        const now = e.timeStamp;
+        if (lastClick.id === node.id && (now - lastClick.time) < 320) {
+          lastClick = { id: null, time: 0 };
+          setTimeout(() => startEdit(node), 10);
+        } else {
+          lastClick = { id: node.id, time: now };
+          if (node !== root) {
+            dragNodeState = { node, startX: e.clientX, startY: e.clientY, active: false };
+          }
+        }
+      } else {
+        // 背景パン開始
+        panState = { x: e.clientX - view.x, y: e.clientY - view.y };
+      }
+      svg.setPointerCapture(e.pointerId);
+    });
+
+    svg.addEventListener('pointermove', e => {
+      if (panState) {
+        view.x = e.clientX - panState.x;
+        view.y = e.clientY - panState.y;
+        applyCamera();
+      } else if (dragNodeState) {
+        const dist = Math.hypot(e.clientX - dragNodeState.startX, e.clientY - dragNodeState.startY);
+        if (!dragNodeState.active && dist > 7) {
+          dragNodeState.active = true;
+          ghost.textContent = dragNodeState.node.text.split('\n')[0];
+          ghost.style.display = 'block';
+        }
+        if (dragNodeState.active) {
+          ghost.style.left = (e.clientX + 14) + 'px';
+          ghost.style.top = (e.clientY + 14) + 'px';
+        }
+      }
+    });
+
+    svg.addEventListener('pointerup', e => {
+      if (dragNodeState && dragNodeState.active) {
+        ghost.style.display = 'none';
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const targetG = el && el.closest('[data-id]');
+        if (targetG) {
+          const target = findNode(targetG.dataset.id);
+          const moving = dragNodeState.node;
+          const oldParent = findParent(moving);
+
+          // 循環参照チェック & 同一親チェック
+          if (target && target !== moving && !findNode(target.id, moving) && oldParent !== target) {
+            snapshot();
+            oldParent.children.splice(oldParent.children.indexOf(moving), 1);
+            target.children.push(moving);
+            target.collapsed = false;
+            selected = moving;
+            render();
+          }
+        }
+      }
+      panState = null;
+      dragNodeState = null;
+    });
+
+    svg.addEventListener('wheel', e => {
+      e.preventDefault();
+      applyZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, { x: e.clientX, y: e.clientY });
+    }, { passive: false });
+
+    // --- キーボードショートカット ---
+    window.addEventListener('keydown', e => {
+      if (editingNode || ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      const mod = e.ctrlKey || e.metaKey;
+
+      if (mod) {
+        if (e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+        else if (e.key === 'y') { e.preventDefault(); redo(); }
+        else if (e.key === '0') { e.preventDefault(); fitView(); }
+        return;
+      }
+
+      if (e.key === 'Tab') { e.preventDefault(); addChildNode(); }
+      else if (e.key === 'Enter') { e.preventDefault(); addSiblingNode(); }
+      else if (e.key === 'F2') { e.preventDefault(); startEdit(selected); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteNode(); }
+      else if (e.key === ' ') { e.preventDefault(); toggleCollapse(); }
+    });
+
+    // --- 詳細サイドパネル管理 ---
+    function updateSidePanel() {
+      const n = selected;
+      if (!n) return;
+      $('panelNodeText').value = n.text;
+      $('panelNodeMemo').value = n.memo || '';
+      $('statTotalNodes').innerText = countNodes();
+      $('statChildCount').innerText = n.children.length;
+      $('btnPanelDelete').disabled = (n === root);
+
+      // カラーパレット
+      const palBox = $('panelColors');
+      palBox.innerHTML = '';
+      PALETTE.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = `w-6 h-6 rounded-full border-2 transition ${n.color === c ? 'border-slate-800 scale-110 shadow-sm' : 'border-white hover:scale-105'}`;
+        btn.style.backgroundColor = c;
+        btn.onclick = () => { snapshot(); n.color = c; render(); };
+        palBox.appendChild(btn);
+      });
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'text-[11px] font-bold text-slate-500 hover:text-slate-800 ml-1 underline';
+      resetBtn.innerText = '標準色';
+      resetBtn.onclick = () => { snapshot(); n.color = null; render(); };
+      palBox.appendChild(resetBtn);
+    }
+
+    $('panelNodeText').addEventListener('input', e => {
+      if (!selected) return;
+      selected.text = e.target.value;
+      render();
+    });
+
+    $('panelNodeMemo').addEventListener('input', e => {
+      if (!selected) return;
+      selected.memo = e.target.value;
+      saveToStorage();
+    });
+
+    window.toggleSidePanel = () => {
+      const p = $('sidePanel');
+      p.classList.toggle('hidden');
+    };
+
+    window.toggleDisclaimer = () => {
+      $('disclaimerBox').classList.toggle('hidden');
+    };
+
+    // --- エクスポート & 保存 ---
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, serialize({ title: $('mapTitleInput').value, root }));
+        $('saveBadge').innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>保存済み';
+      } catch (e) {
+        $('saveBadge').innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i>保存失敗';
+      }
+    }
+
+    $('mapTitleInput').addEventListener('input', () => {
+      saveToStorage();
+    });
+
+    window.exportJSON = () => {
+      const blob = new Blob([serialize({ title: $('mapTitleInput').value, version: 1, root })], { type: 'application/json' });
+      downloadFile(blob, `${$('mapTitleInput').value || 'mindmap'}.json`);
+    };
+
+    $('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const d = JSON.parse(r.result);
+          if (!d.root) throw 0;
+          snapshot();
+          $('mapTitleInput').value = d.title || 'マインドマップ';
+          root = cloneNode(d.root);
+          selected = root;
+          render();
+          fitView();
+        } catch (err) {
+          alert('JSONファイルの読み込みに失敗しました。形式をご確認ください。');
+        }
+      };
+      r.readAsText(file);
+      e.target.value = '';
+    });
+
+    window.exportPNG = () => {
+      renderSvg(true);
+      const pad = 60;
+      const w = boundingBox.x1 - boundingBox.x0 + pad * 2;
+      const h = boundingBox.y1 - boundingBox.y0 + pad * 2;
+      const x = boundingBox.x0 - pad;
+      const y = boundingBox.y0 - pad;
+
+      const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fafbfc"/>
+        ${renderSvg(true)}
+      </svg>`;
+
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = w * 2;
+        c.height = h * 2;
+        const ctx = c.getContext('2d');
+        ctx.scale(2, 2);
+        ctx.drawImage(img, 0, 0);
+        c.toBlob(b => downloadFile(b, `${$('mapTitleInput').value || 'mindmap'}.png`));
+      };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+      render(); // 選択枠の復帰
+    };
+
+    function downloadFile(blob, name) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    // --- 初期起動 ---
+    function init() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && saved.root) {
+          $('mapTitleInput').value = saved.title || 'マインドマップ';
+          root = cloneNode(saved.root);
+        }
+      } catch (e) {}
+
+      if (!root) {
+        root = cloneNode({
+          text: '中心テーマ',
+          children: [
+            { text: '主要トピックA', children: [{ text: 'アイデア 1' }, { text: 'アイデア 2' }] },
+            { text: '主要トピックB', children: [{ text: '課題' }, { text: '対策' }] },
+            { text: '次のアクション', children: [] }
+          ]
+        });
+      }
+
+      selected = root;
+      render();
+      fitView();
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
