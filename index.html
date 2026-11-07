@@ -44,13 +44,15 @@
           </div>
           <input id="mapTitleInput" class="text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100 focus:bg-white border border-transparent focus:border-indigo-400 rounded-lg px-2 py-0.5 outline-none max-w-[160px] sm:max-w-xs transition" value="マインドマップ">
         </div>
-        <span id="saveBadge" class="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <i class="fa-solid fa-circle-check mr-1"></i>保存済み
-        </span>
+        <!-- 保存バッジ（初期状態は透明・非表示） -->
+        <span id="saveBadge" class="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold opacity-0 transition-all duration-300 pointer-events-none"></span>
       </div>
 
       <!-- アクションボタン群 -->
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btnNew" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5" title="まっさらな新規マップを作成">
+          <i class="fa-solid fa-file-circle-plus text-indigo-600"></i><span class="hidden sm:inline">新規</span>
+        </button>
         <button id="btnHelp" class="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs" title="操作・使い方のヒント">
           <i class="fa-solid fa-circle-question text-amber-600"></i><span class="hidden sm:inline">使い方</span>
         </button>
@@ -68,11 +70,11 @@
         <button id="btnExportPng" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5" title="画像書き出し">
           <i class="fa-solid fa-camera"></i><span class="hidden sm:inline">PNG保存</span>
         </button>
-        <button id="btnExportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON保存">
-          <i class="fa-solid fa-download"></i>
+        <button id="btnExportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSONファイルとしてバックアップ保存">
+          <i class="fa-solid fa-download"></i><span class="hidden sm:inline">JSON保存</span>
         </button>
-        <button id="btnImportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSON読込">
-          <i class="fa-solid fa-folder-open"></i>
+        <button id="btnImportJson" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="JSONファイルを開く">
+          <i class="fa-solid fa-folder-open"></i><span class="hidden sm:inline">JSON読込</span>
         </button>
         <button id="btnToggleSide" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="詳細パネル切替">
           <i class="fa-solid fa-sliders"></i>
@@ -119,7 +121,7 @@
         </button>
       </div>
 
-      <!-- 操作ヒントバナー（わかりやすく強調） -->
+      <!-- 操作ヒントバナー -->
       <div class="hidden lg:flex items-center gap-2 absolute bottom-4 left-44 z-10 text-[11px] font-semibold text-slate-600 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs pointer-events-none">
         <span class="text-indigo-600"><i class="fa-solid fa-lightbulb"></i></span>
         <span><b>Tab:</b> 子追加 ｜ <b>Enter:</b> 兄弟追加 ｜ <b>クリック:</b> 選択 ｜ <b>ドラッグ:</b> 別のノードへ重ねて親付け替え ｜ <b>Space:</b> 開閉</span>
@@ -180,7 +182,7 @@
     </aside>
   </main>
 
-  <!-- 使い方ガイドモーダル（新設） -->
+  <!-- 使い方ガイドモーダル -->
   <div id="helpModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -207,7 +209,20 @@
           </p>
         </div>
 
-        <!-- ポイント2: 基本キーボード操作 -->
+        <!-- ポイント2: 2種類の保存について -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
+            <i class="fa-solid fa-floppy-disk text-slate-600"></i>
+            マップの保存と復元について
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-600">
+            <li><b>ブラウザ自動保存:</b> 編集すると自動で記憶されます。次回同じブラウザで開くだけで続きから再開できます。</li>
+            <li><b>JSON保存（バックアップ）:</b> 別のPCへ移したい時や、大切なマップを保管したい時は「JSON保存」でファイルを保存してください。「JSON読込」からいつでも復元できます。</li>
+            <li><b>新規作成:</b> 「新規」ボタンで中心テーマのみのまっさらな状態に戻せます（間違えたらCtrl+Zで復元可能）。</li>
+          </ul>
+        </div>
+
+        <!-- ポイント3: 基本キーボード操作 -->
         <div class="space-y-2">
           <div class="font-bold text-slate-800 text-xs uppercase tracking-wider text-slate-400">ショートカット一覧</div>
           <div class="grid grid-cols-2 gap-2 text-[11px]">
@@ -218,16 +233,6 @@
             <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>ノード削除</span><b class="text-rose-600">Delete</b></div>
             <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>元に戻す / やり直す</span><b class="text-slate-800">Ctrl+Z / Y</b></div>
           </div>
-        </div>
-
-        <!-- ポイント3: 画面の移動・拡大縮小 -->
-        <div class="space-y-1.5">
-          <div class="font-bold text-slate-800 text-xs uppercase tracking-wider text-slate-400">キャンバスの移動</div>
-          <ul class="list-disc list-inside space-y-1 text-slate-500">
-            <li><b>背景をドラッグ:</b> 画面全体を自由に移動（パン）</li>
-            <li><b>マウスホイール / ピンチ:</b> ズームイン・ズームアウト</li>
-            <li><b>「全体」ボタン:</b> すべてのノードが中央に収まるように自動調整</li>
-          </ul>
         </div>
       </div>
 
@@ -291,6 +296,7 @@
     let lastClick = { id: null, time: 0 };
     let boundingBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
     let currentDropTarget = null;
+    let saveBadgeTimer = null;
 
     const makeNode = (text = '新しいトピック') => ({
       id: uid(),
@@ -369,7 +375,7 @@
       if (st.title) $('mapTitleInput').value = st.title;
       root = cloneNode(st.root);
       selected = findNode(selected?.id) || root;
-      render();
+      render(true);
     }
 
     function measure(node) {
@@ -519,12 +525,12 @@
       $('zoomRate').innerText = Math.round(view.k * 100) + '%';
     }
 
-    function render() {
+    function render(isUserAction = false) {
       calculateLayout();
       svg.innerHTML = `<g>${renderSvg()}</g>`;
       applyCamera();
       updateSidePanel();
-      saveToStorage();
+      saveToStorage(isUserAction);
     }
 
     function escapeHtml(s) {
@@ -593,7 +599,7 @@
       if (apply && val && val !== node.text) {
         snapshot();
         node.text = val;
-        render();
+        render(true);
       }
     }
 
@@ -621,7 +627,7 @@
       selected.collapsed = false;
       selected.children.push(child);
       selected = child;
-      render();
+      render(true);
       setTimeout(() => startEdit(child), 20);
     }
 
@@ -634,7 +640,7 @@
       const idx = parent.children.indexOf(selected);
       parent.children.splice(idx + 1, 0, sibling);
       selected = sibling;
-      render();
+      render(true);
       setTimeout(() => startEdit(sibling), 20);
     }
 
@@ -646,14 +652,14 @@
       const idx = parent.children.indexOf(selected);
       parent.children.splice(idx, 1);
       selected = parent.children[idx] || parent.children[idx - 1] || parent;
-      render();
+      render(true);
     }
 
     function toggleCollapse() {
       if (!selected || !selected.children.length) return;
       snapshot();
       selected.collapsed = !selected.collapsed;
-      render();
+      render(true);
     }
 
     function searchPrompt() {
@@ -684,7 +690,7 @@
       }
     }
 
-    // --- ポインターイベント & ドロップ先ハイライト ---
+    // --- ポインターイベント ---
     svg.addEventListener('pointerdown', e => {
       if (editingNode) finishEdit(true);
 
@@ -695,7 +701,7 @@
           snapshot();
           n.collapsed = false;
           selected = n;
-          render();
+          render(true);
         }
         return;
       }
@@ -738,7 +744,6 @@
           ghost.style.left = (e.clientX + 14) + 'px';
           ghost.style.top = (e.clientY + 14) + 'px';
 
-          // 重なっているドロップ先を検出してグリーンハイライト
           const el = document.elementFromPoint(e.clientX, e.clientY);
           const targetG = el && el.closest('[data-id]');
           
@@ -750,7 +755,6 @@
           if (targetG) {
             const tid = targetG.dataset.id;
             const movingNode = dragNodeState.node;
-            // 自分自身・自身の子孫・現在の親でなければ吸着可能
             if (tid !== movingNode.id && !findNode(tid, movingNode)) {
               targetG.classList.add('drop-hover');
               currentDropTarget = targetG;
@@ -781,7 +785,7 @@
             target.children.push(moving);
             target.collapsed = false;
             selected = moving;
-            render();
+            render(true);
           }
         }
       }
@@ -827,29 +831,44 @@
         const btn = document.createElement('button');
         btn.className = `w-6 h-6 rounded-full border-2 transition ${n && n.color === c ? 'border-slate-800 scale-110 shadow-sm' : 'border-white hover:scale-105'}`;
         btn.style.backgroundColor = c;
-        btn.onclick = () => { snapshot(); n.color = c; render(); };
+        btn.onclick = () => { snapshot(); n.color = c; render(true); };
         palBox.appendChild(btn);
       });
       const resetBtn = document.createElement('button');
       resetBtn.className = 'text-[11px] font-bold text-slate-500 hover:text-slate-800 ml-1 underline';
       resetBtn.innerText = '標準色';
-      resetBtn.onclick = () => { snapshot(); n.color = null; render(); };
+      resetBtn.onclick = () => { snapshot(); n.color = null; render(true); };
       palBox.appendChild(resetBtn);
     }
 
     $('panelNodeText').addEventListener('input', e => {
       if (!selected) return;
       selected.text = e.target.value;
-      render();
+      render(true);
     });
 
     $('panelNodeMemo').addEventListener('input', e => {
       if (!selected) return;
       selected.memo = e.target.value;
-      saveToStorage();
+      saveToStorage(true);
     });
 
     // --- ボタンバインド ---
+    $('btnNew').onclick = () => {
+      const ok = confirm('現在のマップをリセットして、新しいマップを作成しますか？\n（必要な場合は先に「JSON保存」を行ってください）');
+      if (!ok) return;
+      snapshot();
+      $('mapTitleInput').value = '新しいマインドマップ';
+      root = cloneNode({
+        text: '中心テーマ',
+        children: []
+      });
+      selected = root;
+      view = { x: 0, y: 0, k: 1 };
+      render(true);
+      fitView();
+    };
+
     $('btnHelp').onclick = () => $('helpModal').classList.remove('hidden');
     $('btnCloseHelp').onclick = () => $('helpModal').classList.add('hidden');
     $('btnHelpConfirm').onclick = () => $('helpModal').classList.add('hidden');
@@ -877,16 +896,35 @@
     $('btnSideAddChild').onclick = addChildNode;
     $('btnSideDelete').onclick = deleteNode;
 
-    function saveToStorage() {
-      try {
-        localStorage.setItem(STORAGE_KEY, serialize({ title: $('mapTitleInput').value, root }));
-        $('saveBadge').innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>保存済み';
-      } catch (e) {
-        $('saveBadge').innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-500"></i>保存失敗';
+    // --- 保存処理 ---
+    function showSaveStatus(status) {
+      const badge = $('saveBadge');
+      if (!badge) return;
+      clearTimeout(saveBadgeTimer);
+
+      if (status === 'saved') {
+        badge.className = 'hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 opacity-100 transition-all duration-300';
+        badge.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>保存済み';
+        saveBadgeTimer = setTimeout(() => {
+          badge.classList.remove('opacity-100');
+          badge.classList.add('opacity-0');
+        }, 2200);
+      } else if (status === 'error') {
+        badge.className = 'hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 opacity-100 transition-all duration-300';
+        badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>保存失敗';
       }
     }
 
-    $('mapTitleInput').addEventListener('input', saveToStorage);
+    function saveToStorage(isUserAction = false) {
+      try {
+        localStorage.setItem(STORAGE_KEY, serialize({ title: $('mapTitleInput').value, root }));
+        if (isUserAction) showSaveStatus('saved');
+      } catch (e) {
+        showSaveStatus('error');
+      }
+    }
+
+    $('mapTitleInput').addEventListener('input', () => saveToStorage(true));
 
     function exportJSON() {
       const blob = new Blob([serialize({ title: $('mapTitleInput').value, version: 1, root })], { type: 'application/json' });
@@ -905,7 +943,7 @@
           $('mapTitleInput').value = d.title || 'マインドマップ';
           root = cloneNode(d.root);
           selected = root;
-          render();
+          render(true);
           fitView();
         } catch (err) {
           alert('JSONファイルの読み込みに失敗しました。');
@@ -939,7 +977,7 @@
         c.toBlob(b => downloadFile(b, `${$('mapTitleInput').value || 'mindmap'}.png`));
       };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
-      render();
+      render(false);
     }
 
     function downloadFile(blob, name) {
@@ -971,7 +1009,7 @@
       }
 
       selected = root;
-      render();
+      render(false);
       fitView();
     }
 
