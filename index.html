@@ -15,6 +15,15 @@
       background-size: 24px 24px;
     }
     #map text { user-select: none; -webkit-user-select: none; }
+
+    /* ドロップ可能先ノードの吸着ハイライト */
+    .drop-hover rect {
+      stroke: #10b981 !important;
+      stroke-width: 3.5px !important;
+      fill: #ecfdf5 !important;
+      filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.45)) !important;
+      transition: all 0.15s ease;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
@@ -22,6 +31,8 @@
   <!-- ヘッダー -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs flex-none">
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+      
+      <!-- ロゴ & Apps Hub戻りリンク -->
       <div class="flex items-center gap-3">
         <a href="../" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition">
           <i class="fa-solid fa-arrow-left"></i>
@@ -38,14 +49,19 @@
         </span>
       </div>
 
+      <!-- アクションボタン群 -->
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btnHelp" class="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs" title="操作・使い方のヒント">
+          <i class="fa-solid fa-circle-question text-amber-600"></i><span class="hidden sm:inline">使い方</span>
+        </button>
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
         <button id="btnUndo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="元に戻す (Ctrl+Z)">
           <i class="fa-solid fa-rotate-left"></i>
         </button>
         <button id="btnRedo" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-30" title="やり直す (Ctrl+Y)">
           <i class="fa-solid fa-rotate-right"></i>
         </button>
-        <div class="h-4 w-px bg-slate-200 mx-0.5 sm:mx-1"></div>
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
         <button id="btnFit" class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="全体表示 (Ctrl+0)">
           <i class="fa-solid fa-expand sm:mr-1"></i><span class="hidden sm:inline">全体</span>
         </button>
@@ -103,16 +119,22 @@
         </button>
       </div>
 
-      <div class="hidden lg:block absolute bottom-4 left-44 z-10 text-[11px] font-medium text-slate-400 pointer-events-none">
-        クリック：選択 ｜ Tab：子ノード追加 ｜ Enter：兄弟ノード追加 ｜ ダブルクリック/F2：編集 ｜ Space：開閉 ｜ Delete：削除 ｜ ドラッグ：親付け替え
+      <!-- 操作ヒントバナー（わかりやすく強調） -->
+      <div class="hidden lg:flex items-center gap-2 absolute bottom-4 left-44 z-10 text-[11px] font-semibold text-slate-600 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs pointer-events-none">
+        <span class="text-indigo-600"><i class="fa-solid fa-lightbulb"></i></span>
+        <span><b>Tab:</b> 子追加 ｜ <b>Enter:</b> 兄弟追加 ｜ <b>クリック:</b> 選択 ｜ <b>ドラッグ:</b> 別のノードへ重ねて親付け替え ｜ <b>Space:</b> 開閉</span>
       </div>
     </div>
 
     <!-- インライン編集用テキストエリア -->
     <textarea id="nodeEditor" wrap="off" class="fixed hidden z-30 outline-none border-2 border-indigo-500 rounded-xl px-3 py-1.5 bg-white text-slate-900 shadow-xl resize-none font-bold overflow-hidden leading-tight"></textarea>
 
-    <!-- ドラッグ中ゴースト -->
-    <div id="dragGhost" class="fixed hidden pointer-events-none z-30 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-lg opacity-85"></div>
+    <!-- ドラッグ中ゴースト（メッセージ付き） -->
+    <div id="dragGhost" class="fixed hidden pointer-events-none z-30 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-xl opacity-90 flex items-center gap-2">
+      <i class="fa-solid fa-arrows-turn-to-dots text-indigo-200"></i>
+      <span id="dragGhostText">ノード名</span>
+      <span class="bg-indigo-700/80 text-[10px] px-1.5 py-0.5 rounded text-indigo-100">重ねて親を変更</span>
+    </div>
 
     <!-- 右側サイドパネル -->
     <aside id="sidePanel" class="w-80 border-l border-slate-200 bg-white flex flex-col z-20 transition-all duration-300 shadow-lg">
@@ -158,6 +180,63 @@
     </aside>
   </main>
 
+  <!-- 使い方ガイドモーダル（新設） -->
+  <div id="helpModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-compass text-indigo-600"></i> MindFlow の使い方・操作ガイド
+        </h3>
+        <button id="btnCloseHelp" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-600 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
+        <!-- ポイント1: ノードの移動・親付け替え -->
+        <div class="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5">
+          <div class="font-bold text-indigo-950 flex items-center gap-1.5 text-sm">
+            <i class="fa-solid fa-arrows-turn-to-dots text-indigo-600"></i>
+            ノードの位置を変えたいとき（親の付け替え）
+          </div>
+          <p>
+            ノードは<b>「自動で重ならないように整列するRadial（左右展開）レイアウト」</b>を採用しています。
+          </p>
+          <p class="font-semibold text-indigo-900">
+            👉 ノードを掴んで<b>「合流させたい別のノードの上」へ重ねて離す</b>と、ドロップ先が緑色に光り、その配下へ枝ごと付け替わります！
+          </p>
+        </div>
+
+        <!-- ポイント2: 基本キーボード操作 -->
+        <div class="space-y-2">
+          <div class="font-bold text-slate-800 text-xs uppercase tracking-wider text-slate-400">ショートカット一覧</div>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>子ノード追加</span><b class="text-indigo-600">Tab</b></div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>同じ階層のノード追加</span><b class="text-indigo-600">Enter</b></div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>文字を編集</span><b class="text-indigo-600">Wクリック / F2</b></div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>枝の開閉（折りたたみ）</span><b class="text-indigo-600">Space</b></div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>ノード削除</span><b class="text-rose-600">Delete</b></div>
+            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex justify-between"><span>元に戻す / やり直す</span><b class="text-slate-800">Ctrl+Z / Y</b></div>
+          </div>
+        </div>
+
+        <!-- ポイント3: 画面の移動・拡大縮小 -->
+        <div class="space-y-1.5">
+          <div class="font-bold text-slate-800 text-xs uppercase tracking-wider text-slate-400">キャンバスの移動</div>
+          <ul class="list-disc list-inside space-y-1 text-slate-500">
+            <li><b>背景をドラッグ:</b> 画面全体を自由に移動（パン）</li>
+            <li><b>マウスホイール / ピンチ:</b> ズームイン・ズームアウト</li>
+            <li><b>「全体」ボタン:</b> すべてのノードが中央に収まるように自動調整</li>
+          </ul>
+        </div>
+      </div>
+
+      <button id="btnHelpConfirm" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition">
+        理解しました！ マップを作る
+      </button>
+    </div>
+  </div>
+
   <!-- 免責フッター -->
   <footer class="bg-white border-t border-slate-200 flex-none z-10">
     <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between text-[11px] text-slate-400">
@@ -194,6 +273,7 @@
     const svg = $('map');
     const editor = $('nodeEditor');
     const ghost = $('dragGhost');
+    const ghostText = $('dragGhostText');
     const cx = document.createElement('canvas').getContext('2d');
     cx.font = 'bold 13px ' + FONT_FAMILY;
 
@@ -210,6 +290,7 @@
     let dragNodeState = null;
     let lastClick = { id: null, time: 0 };
     let boundingBox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+    let currentDropTarget = null;
 
     const makeNode = (text = '新しいトピック') => ({
       id: uid(),
@@ -603,7 +684,7 @@
       }
     }
 
-    // --- ポインターイベント ---
+    // --- ポインターイベント & ドロップ先ハイライト ---
     svg.addEventListener('pointerdown', e => {
       if (editingNode) finishEdit(true);
 
@@ -650,17 +731,41 @@
         const dist = Math.hypot(e.clientX - dragNodeState.startX, e.clientY - dragNodeState.startY);
         if (!dragNodeState.active && dist > 5) {
           dragNodeState.active = true;
-          ghost.textContent = dragNodeState.node.text.split('\n')[0];
-          ghost.style.display = 'block';
+          ghostText.textContent = dragNodeState.node.text.split('\n')[0];
+          ghost.style.display = 'flex';
         }
         if (dragNodeState.active) {
           ghost.style.left = (e.clientX + 14) + 'px';
           ghost.style.top = (e.clientY + 14) + 'px';
+
+          // 重なっているドロップ先を検出してグリーンハイライト
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          const targetG = el && el.closest('[data-id]');
+          
+          if (currentDropTarget && currentDropTarget !== targetG) {
+            currentDropTarget.classList.remove('drop-hover');
+            currentDropTarget = null;
+          }
+
+          if (targetG) {
+            const tid = targetG.dataset.id;
+            const movingNode = dragNodeState.node;
+            // 自分自身・自身の子孫・現在の親でなければ吸着可能
+            if (tid !== movingNode.id && !findNode(tid, movingNode)) {
+              targetG.classList.add('drop-hover');
+              currentDropTarget = targetG;
+            }
+          }
         }
       }
     });
 
     svg.addEventListener('pointerup', e => {
+      if (currentDropTarget) {
+        currentDropTarget.classList.remove('drop-hover');
+        currentDropTarget = null;
+      }
+
       if (dragNodeState && dragNodeState.active) {
         ghost.style.display = 'none';
         const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -745,6 +850,10 @@
     });
 
     // --- ボタンバインド ---
+    $('btnHelp').onclick = () => $('helpModal').classList.remove('hidden');
+    $('btnCloseHelp').onclick = () => $('helpModal').classList.add('hidden');
+    $('btnHelpConfirm').onclick = () => $('helpModal').classList.add('hidden');
+
     $('btnUndo').onclick = undo;
     $('btnRedo').onclick = redo;
     $('btnFit').onclick = fitView;
